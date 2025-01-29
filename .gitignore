@@ -1,0 +1,7 @@
+encrypt_decrypt
+cryption
+*.o
+*.d
+*.out
+build/
+.env
