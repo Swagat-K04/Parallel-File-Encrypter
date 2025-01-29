@@ -2,6 +2,8 @@
 #include <fstream>
 #include "IO.hpp"
 
+using namespace std;
+
 IO::IO(const string &file_path) {
   file_stream.open(file_path, ios::in | ios::out | ios::binary);
   if(!file_stream.is_open()) {

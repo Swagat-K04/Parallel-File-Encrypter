@@ -55,6 +55,8 @@
     "semaphore": "cpp",
     "shared_mutex": "cpp",
     "sstream": "cpp",
-    "stop_token": "cpp"
+    "stop_token": "cpp",
+    "mutex": "cpp",
+    "thread": "cpp"
   }
 }

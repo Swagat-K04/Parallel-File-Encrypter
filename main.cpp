@@ -3,6 +3,8 @@
 #include <algorithm>
 #include "./src/app/processes/ProcessManagement.hpp"
 #include "./src/app/processes/Task.hpp"
+#include <ctime>
+#include <iomanip>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -37,6 +39,11 @@ int main(int argc, char *argv[]) {
           if(f_stream.is_open()) {
             Action taskAction = (action == "ENCRYPT" ? Action::ENCRYPT : Action::DECRYPT);
             auto task = make_unique<Task>(move(f_stream), taskAction, filePath);
+
+            time_t t = time(nullptr);
+            tm* now = localtime(&t);
+            cout << "Starting encryption/decryption at: " << put_time(now, "%Y-%m-%d %H:%M:%S") << endl;
+
             processManagement.submitToQueue(move(task));
           }
           else {
@@ -53,4 +60,6 @@ int main(int argc, char *argv[]) {
   catch(const fs::filesystem_error &ex) {
     cout << "Filesystem error: " << ex.what() << endl;
   }
+
+  return 0;
 }

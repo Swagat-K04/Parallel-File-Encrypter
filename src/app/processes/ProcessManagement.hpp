@@ -2,14 +2,19 @@
 #define PROCESS_MANAGEMENT_HPP
 
 #include "Task.hpp"
-#include <queue>
+#include <mutex>
 #include <memory>
 #include <atomic>
+#include <semaphore.h>
 
 class ProcessManagement {
 
+  sem_t* itemsSemaphore;
+  sem_t* emptySlotsSemaphore;
+
   public:
     ProcessManagement();
+    ~ProcessManagement();
     bool submitToQueue(unique_ptr<Task> task);
     void executeTasks();
 
@@ -22,12 +27,15 @@ class ProcessManagement {
 
       void printSharedMemory() {
         std::cout << size << std::endl;
+        std::cout << front << std::endl;
+        std::cout << rear << std::endl;
       }
     };
 
     SharedMemory* sharedMem;
     int shmFd;
     const char* SHM_NAME = "/my_queue";
+    std::mutex queueLock;
     
 };
 
