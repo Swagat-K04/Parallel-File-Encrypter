@@ -2,8 +2,62 @@
 #include <filesystem>
 #include <cstring>
 #include <iostream>
+#include <thread>
+#include <chrono>
+
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <cstdio>
+#endif
 
 namespace fs = std::filesystem;
+
+namespace {
+
+#if defined(_WIN32) || defined(_WIN64)
+static std::wstring toWidePath(const std::string& str) {
+    if (str.empty()) return std::wstring();
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), nullptr, 0);
+    std::wstring wstr(sizeNeeded, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), &wstr[0], sizeNeeded);
+    return wstr;
+}
+
+static void atomicReplaceFile(const std::string& sourcePath, const std::string& targetPath) {
+    std::wstring wSrc = toWidePath(sourcePath);
+    std::wstring wDst = toWidePath(targetPath);
+
+    // Try Win32 ReplaceFileW and MoveFileExW with retry backoff for transient locks
+    for (int attempt = 0; attempt < 10; ++attempt) {
+        if (ReplaceFileW(wDst.c_str(), wSrc.c_str(), nullptr, REPLACEFILE_IGNORE_MERGE_ERRORS, nullptr, nullptr)) {
+            return;
+        }
+        if (MoveFileExW(wSrc.c_str(), wDst.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5 * (attempt + 1)));
+    }
+    if (!MoveFileExW(wSrc.c_str(), wDst.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        throw crypto::CryptoException("Failed to atomically replace file: " + targetPath + " (WinError " + std::to_string(GetLastError()) + ")");
+    }
+}
+#else
+static void atomicReplaceFile(const std::string& sourcePath, const std::string& targetPath) {
+    if (::rename(sourcePath.c_str(), targetPath.c_str()) != 0) {
+        throw crypto::CryptoException("Failed to atomically rename file: " + targetPath + " (" + strerror(errno) + ")");
+    }
+}
+#endif
+
+} // anonymous namespace
 
 namespace io {
 
@@ -100,8 +154,10 @@ void FileProcessor::encryptFile(
 
     std::memcpy(outMapped.data(), &header, sizeof(header));
 
-    // 7. Sync memory pages to storage controller
+    // 7. Sync memory pages to storage controller and close handles
     outMapped.sync();
+    inMapped.close();
+    outMapped.close();
 }
 
 void FileProcessor::decryptFile(
@@ -147,7 +203,6 @@ void FileProcessor::decryptFile(
         outMapped.open(outputPath, OpenMode::CreateOrResize, header.plaintext_size);
         outMapped.advise(AccessAdvice::Sequential);
     } else {
-        // Create an empty file
         outMapped.open(outputPath, OpenMode::CreateOrResize, 0);
     }
 
@@ -165,7 +220,6 @@ void FileProcessor::decryptFile(
             );
             outMapped.sync();
         } else {
-            // Verify empty payload tag
             crypto::AES256GCM::decrypt(
                 key.data(),
                 header.iv,
@@ -175,12 +229,15 @@ void FileProcessor::decryptFile(
                 nullptr
             );
         }
+        inMapped.close();
+        outMapped.close();
     } catch (...) {
+        inMapped.close();
         outMapped.close();
         if (fs::exists(outputPath)) {
             fs::remove(outputPath);
         }
-        throw; // Re-throw authentication or crypto exception
+        throw;
     }
 }
 
@@ -188,7 +245,7 @@ void FileProcessor::encryptFileInPlace(const std::string& filePath, std::string_
     std::string tmpPath = filePath + ".tmp_enc";
     try {
         encryptFile(filePath, tmpPath, passphrase);
-        fs::rename(tmpPath, filePath);
+        atomicReplaceFile(tmpPath, filePath);
     } catch (...) {
         if (fs::exists(tmpPath)) {
             fs::remove(tmpPath);
@@ -201,7 +258,7 @@ void FileProcessor::decryptFileInPlace(const std::string& filePath, std::string_
     std::string tmpPath = filePath + ".tmp_dec";
     try {
         decryptFile(filePath, tmpPath, passphrase);
-        fs::rename(tmpPath, filePath);
+        atomicReplaceFile(tmpPath, filePath);
     } catch (...) {
         if (fs::exists(tmpPath)) {
             fs::remove(tmpPath);
