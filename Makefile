@@ -1,30 +1,20 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -g -Wall -MMD -MP -I. -Isrc/app/encryptDecrypt -Isrc/app/fileHandling -Isrc/app/processes
+CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -maes -mpclmul -mssse3 -MMD -MP -I. -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool
 
-MAIN_TARGET = encrypt_decrypt
-CRYPTION_TARGET = cryption
+TARGET = encrypt_decrypt
 
-MAIN_SRC = main.cpp \
-           src/app/processes/ProcessManagement.cpp \
-           src/app/fileHandling/IO.cpp \
-           src/app/fileHandling/ReadEnv.cpp \
-           src/app/encryptDecrypt/Cryption.cpp
+SRC = main.cpp \
+      src/crypto/AES256GCM.cpp \
+      src/io/MemoryMappedFile.cpp \
+      src/io/FileProcessor.cpp \
+      src/ipc/SharedTaskQueue.cpp \
+      src/pool/ProcessPool.cpp
 
-CRYPTION_SRC = src/app/encryptDecrypt/CryptionMain.cpp \
-               src/app/encryptDecrypt/Cryption.cpp \
-               src/app/fileHandling/IO.cpp \
-               src/app/fileHandling/ReadEnv.cpp
+OBJ = $(SRC:.cpp=.o)
 
-MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
-CRYPTION_OBJ = $(CRYPTION_SRC:.cpp=.o)
+all: $(TARGET)
 
-all: $(MAIN_TARGET) $(CRYPTION_TARGET)
-
-$(MAIN_TARGET): $(MAIN_OBJ)
-	@echo "Linking $@..."
-	$(CXX) $(CXXFLAGS) $^ -o $@
-
-$(CRYPTION_TARGET): $(CRYPTION_OBJ)
+$(TARGET): $(OBJ)
 	@echo "Linking $@..."
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
@@ -32,11 +22,19 @@ $(CRYPTION_TARGET): $(CRYPTION_OBJ)
 	@echo "Compiling $<..."
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+test: all
+	@echo "Running all test suites..."
+	$(CXX) $(CXXFLAGS) src/crypto/AES256GCM.cpp tests/test_crypto.cpp -o tests/test_crypto.exe
+	./tests/test_crypto.exe
+	$(CXX) $(CXXFLAGS) src/crypto/AES256GCM.cpp src/io/MemoryMappedFile.cpp src/io/FileProcessor.cpp tests/test_io.cpp -o tests/test_io.exe
+	./tests/test_io.exe
+	$(CXX) $(CXXFLAGS) src/crypto/AES256GCM.cpp src/io/MemoryMappedFile.cpp src/io/FileProcessor.cpp src/ipc/SharedTaskQueue.cpp src/pool/ProcessPool.cpp tests/test_pool.cpp -o tests/test_pool.exe
+	./tests/test_pool.exe
+
 clean:
 	@echo "Cleaning up..."
-	rm -f $(MAIN_OBJ) $(CRYPTION_OBJ) $(MAIN_TARGET) $(CRYPTION_TARGET) *.d
+	rm -f $(OBJ) $(TARGET) $(TARGET).exe tests/*.exe tests/*.d src/*/*.o src/*/*.d *.d
 
-.PHONY: clean all
+.PHONY: clean all test
 
-# Include dependency files
--include $(MAIN_OBJ:.o=.d) $(CRYPTION_OBJ:.o=.d)
+-include $(OBJ:.o=.d)

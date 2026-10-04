@@ -3,6 +3,7 @@ cryption
 *.o
 *.d
 *.out
+*.exe
 build/
 .env
 *.docx
