@@ -1,0 +1,27 @@
+[
+  {
+    "directory": "C:/TheImp/PROJECTS/Parallel-File-Encrypter",
+    "command": "C:/MinGW/bin/g++.exe -std=c++17 -maes -mpclmul -mssse3 -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool -c src/crypto/AES256GCM.cpp",
+    "file": "src/crypto/AES256GCM.cpp"
+  },
+  {
+    "directory": "C:/TheImp/PROJECTS/Parallel-File-Encrypter",
+    "command": "C:/MinGW/bin/g++.exe -std=c++17 -maes -mpclmul -mssse3 -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool -c src/io/MemoryMappedFile.cpp",
+    "file": "src/io/MemoryMappedFile.cpp"
+  },
+  {
+    "directory": "C:/TheImp/PROJECTS/Parallel-File-Encrypter",
+    "command": "C:/MinGW/bin/g++.exe -std=c++17 -maes -mpclmul -mssse3 -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool -c src/io/FileProcessor.cpp",
+    "file": "src/io/FileProcessor.cpp"
+  },
+  {
+    "directory": "C:/TheImp/PROJECTS/Parallel-File-Encrypter",
+    "command": "C:/MinGW/bin/g++.exe -std=c++17 -maes -mpclmul -mssse3 -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool -c tests/test_crypto.cpp",
+    "file": "tests/test_crypto.cpp"
+  },
+  {
+    "directory": "C:/TheImp/PROJECTS/Parallel-File-Encrypter",
+    "command": "C:/MinGW/bin/g++.exe -std=c++17 -maes -mpclmul -mssse3 -Isrc/crypto -Isrc/io -Isrc/ipc -Isrc/pool -c tests/test_io.cpp",
+    "file": "tests/test_io.cpp"
+  }
+]

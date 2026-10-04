@@ -1,0 +1,28 @@
+CompileFlags:
+  Add:
+    - -std=c++17
+    - -Isrc/crypto
+    - -Isrc/io
+    - -Isrc/ipc
+    - -Isrc/pool
+    - -maes
+    - -mpclmul
+    - -mssse3
+    - --target=x86_64-w64-mingw32
+    - -isystem
+    - C:/MinGW/include/c++/11.2.0
+    - -isystem
+    - C:/MinGW/include/c++/11.2.0/x86_64-w64-mingw32
+    - -isystem
+    - C:/MinGW/include/c++/11.2.0/backward
+    - -isystem
+    - C:/MinGW/x86_64-w64-mingw32/include
+    - -isystem
+    - C:/MinGW/include
+    - -Wno-builtin-declaration-mismatch
+    - -Wno-incompatible-ms-struct
+
+Diagnostics:
+  Suppress:
+    - builtin_definition
+    - builtin_declaration_mismatch
