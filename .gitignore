@@ -5,3 +5,5 @@ cryption
 *.out
 build/
 .env
+*.docx
+update_docx.py
